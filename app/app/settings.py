@@ -293,3 +293,9 @@ SILKY_PYTHON_PROFILER = os.environ.get("SILKY_PYTHON_PROFILER", "false").lower()
 SILKY_INTERCEPT_PERCENT = int(os.environ.get("SILKY_INTERCEPT_PERCENT", "0"))
 INSTALLED_APPS.append('silk')
 MIDDLEWARE.append('silk.middleware.SilkyMiddleware')
+
+######################################################################
+# IPFS API 
+
+STORAGE_BACKEND = os.environ.get('STORAGE_BACKEND', 's3') # toggle between S3 and IPFS Object stores
+IPFS_API_URL = os.environ.get('IPFS_API_URL', 'http://ipfs:5001')

@@ -1,0 +1,70 @@
+name: blast-dev-$USER
+
+networks:
+  internal:
+    external: false
+
+volumes:
+  ipfs-data: {}
+
+services:
+
+  nginx:
+    extends:
+      file: docker-compose.dev.yaml
+      service: nginx
+  
+  app:
+    extends:
+      file: docker-compose.dev.yaml
+      service: app
+    
+  database:
+    extends:
+      file: docker-compose.dev.yaml
+      service: database
+
+  influxdb:
+    extends:
+      file: docker-compose.dev.yaml
+      service: influxdb
+  
+  grafana:
+    extends:
+      file: docker-compose.dev.yaml
+      service: grafana
+  
+  celery-worker:
+    extends:
+      file: docker-compose.dev.yaml
+      service: celery-worker
+  
+  celery-beat:
+    extends:
+      file: docker-compose.dev.yaml
+      service: celery-beat
+
+  flower:
+    extends:
+      file: docker-compose.dev.yaml
+      service: flower
+  
+  batch:
+    extends:
+      file: docker-compose.dev.yaml
+      service: batch
+  
+  object-store:
+    extends:
+      file: docker-compose.dev.yaml
+      service: object-store
+  
+  ipfs:
+    image: ipfs/kubo:release
+    networks:
+      - internal
+    volumes:
+      - ipfs-data:/data/ipfs
+    command: ["daemon", "--migrate=true", "--offline"]
+    ports:
+      - "127.0.0.1:5001:5001"

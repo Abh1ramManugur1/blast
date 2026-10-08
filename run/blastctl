@@ -68,6 +68,11 @@ case "$PROFILE" in
     ;;
 esac
 
+# use IPFS variant of dev stack when env selects IPFS
+if [[ "${COMPOSE_FILE}" == "docker-compose.dev.yaml" ]] && grep -qs '^STORAGE_BACKEND=ipfs' "env/${ENV_FILE}"; then
+  COMPOSE_FILE="docker-compose.ipfs.yaml"
+fi
+
 if [[ "${COMPOSE_FILE}x" != "x" ]]; then
   COMPOSE_FILES="${COMPOSE_FILES} --file docker/${COMPOSE_FILE}"
 fi
