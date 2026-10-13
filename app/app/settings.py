@@ -309,4 +309,5 @@ MIDDLEWARE.append('silk.middleware.SilkyMiddleware')
 # IPFS API 
 
 STORAGE_BACKEND = os.environ.get('STORAGE_BACKEND', 's3') # toggle between S3 and IPFS Object stores
-IPFS_API_URL = os.environ.get('IPFS_API_URL', 'http://ipfs:5001')
+IPFS_API_URL = os.environ.get('IPFS_API_URL', 'http://ipfs0:5001')
+IPFS_CLUSTER_API_URL = os.environ.get('IPFS_CLUSTER_API_URL', 'http://cluster0:9094')

@@ -8,6 +8,7 @@ class IPFSStore:
 
     def __init__(self, *args, **kwargs):
         self.api = settings.IPFS_API_URL.rstrip('/') + '/api/v0'
+        self.cluster_api = settings.IPFS_CLUSTER_API_URL.rstrip('/')
 
     def _request(self, endpoint, path=None, params=None, **kwargs):
         # RPC API only accepts POST
@@ -20,8 +21,22 @@ class IPFSStore:
             raise IOError(f'IPS {endpoint} failed with {response.status_code}: {response.text}')
         return response
 
+    def _cluster(self, method, endpoint):
+        response = requests.request(method, f'{self.cluster_api}/{endpoint}', timeout=300)
+        if not response.ok:
+            raise IOError(f'IPFS Cluster {endpoint} failed with {response.status_code}: {response.text}')
+        return response
+
+    def _cid(self, path):
+        return self._request('files/stat', path).json()['Hash']
+
     def put_object(self, path, data):
         self._request('files/write', path, files={'file':data}, params={'create': 'true', 'parents': 'true', 'truncate': 'true'})
+
+        # pin content on cluster's peers, replicate
+        cid = self._cid(path)
+        self._cluster('POST', f'pins/{cid}')
+        return cid
 
     def get_object(self, path):
         return self._request('files/read', path).content
@@ -35,11 +50,16 @@ class IPFSStore:
         try:
             self._request('files/stat', path)
             return
-        except IOError as err:
+        except IOError as err: # no existing wrapper to read IOError message, used string parsing
             if 'does not exist' in str(err):
                 return False
             raise
 
     def delete_object(self, path):
+        cid = self._cid(path)
         self._request('files/rm', path, params={'recursive':'true', 'force':'true'})
-        self._request('repo/gc', params={'quiet':'true'})
+        # self._request('repo/gc', params={'quiet':'true'})
+        self._cluster('DELETE', f'pins/{cid}')
+
+        self._cluster('POST', 'ipfs/gc')
+        

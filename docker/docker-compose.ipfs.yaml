@@ -5,7 +5,12 @@ networks:
     external: false
 
 volumes:
-  ipfs-data: {}
+  ipfs0-data: {}
+  ipfs1-data: {}
+  ipfs2-data: {}
+  cluster0-data: {}
+  cluster1-data: {}
+  cluster2-data: {}
 
 services:
 
@@ -59,12 +64,107 @@ services:
       file: docker-compose.dev.yaml
       service: object-store
   
-  ipfs:
+  # ipfs:
+  #   image: ipfs/kubo:release
+  #   networks:
+  #     - internal
+  #   volumes:
+  #     - ipfs-data:/data/ipfs
+  #   command: ["daemon", "--migrate=true", "--offline"]
+  #   ports:
+  #     - "127.0.0.1:5001:5001"
+    
+  ## Peer 0
+  ipfs0:
     image: ipfs/kubo:release
     networks:
       - internal
     volumes:
-      - ipfs-data:/data/ipfs
-    command: ["daemon", "--migrate=true", "--offline"]
+      - ipfs0-data:/data/ipfs
+      - ./ipfs/swarm.key:/run/ipfs/swarm.key:ro
+      - ./ipfs/private-network.sh:/container-init.d/private-network.sh:ro
+    command: ["daemon", "--migrate=true"]
+    environment:
+      - LIBP2P_FORCE_PNET=1 # force kubo to require swarm.key file
+      - IPFS_SWARM_KEY_FILE=/run/ipfs/swarm.key
     ports:
-      - "127.0.0.1:5001:5001"
+      - 127.0.0.1:5001:5001
+  
+  cluster0:
+    container_name: cluster0
+    image: ipfs/ipfs-cluster:latest
+    depends_on:
+      - ipfs0
+    environment:
+      CLUSTER_PEERNAME: cluster0
+      CLUSTER_SECRET: ${CLUSTER_SECRET} # not the same as the swarm key, this is only used by cluster peers, not the kubo swarm
+      CLUSTER_IPFSHTTP_NODEMULTIADDRESS: /dns4/ipfs0/tcp/5001
+      CLUSTER_CRDT_TRUSTEDPEERS: '*'
+      CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS: /ip4/0.0.0.0/tcp/9094
+      CLUSTER_MONITORPINGINTERVAL: 2s
+    volumes:
+      - cluster0-data:/data/ipfs-cluster
+    networks:
+      - internal
+    ports:
+      - 127.0.0.1:9094:9094
+
+  ## Peer 1
+  ipfs1:
+    image: ipfs/kubo:release
+    networks:
+      - internal
+    volumes:
+      - ipfs1-data:/data/ipfs
+      - ./ipfs/swarm.key:/run/ipfs/swarm.key:ro
+      - ./ipfs/private-network.sh:/container-init.d/private-network.sh:ro
+    command: ["daemon", "--migrate=true"]
+    environment:
+      - LIBP2P_FORCE_PNET=1 
+      - IPFS_SWARM_KEY_FILE=/run/ipfs/swarm.key
+  
+  cluster1:
+    image: ipfs/ipfs-cluster:latest
+    depends_on:
+      - ipfs1
+    environment:
+      CLUSTER_PEERNAME: cluster1
+      CLUSTER_SECRET: ${CLUSTER_SECRET} 
+      CLUSTER_IPFSHTTP_NODEMULTIADDRESS: /dns4/ipfs0/tcp/5001
+      CLUSTER_CRDT_TRUSTEDPEERS: '*'
+      CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS: /ip4/0.0.0.0/tcp/9094
+      CLUSTER_MONITORPINGINTERVAL: 2s
+    volumes:
+      - cluster1-data:/data/ipfs-cluster
+    networks:
+      - internal
+  
+  ## Peer 2
+  ipfs2:
+    image: ipfs/kubo:release
+    networks:
+      - internal
+    volumes:
+      - ipfs2-data:/data/ipfs
+      - ./ipfs/swarm.key:/run/ipfs/swarm.key:ro
+      - ./ipfs/private-network.sh:/container-init.d/private-network.sh:ro
+    command: ["daemon", "--migrate=true"]
+    environment:
+      - LIBP2P_FORCE_PNET=1 
+      - IPFS_SWARM_KEY_FILE=/run/ipfs/swarm.key
+  
+  cluster2:
+    image: ipfs/ipfs-cluster:latest
+    depends_on:
+      - ipfs2
+    environment:
+      CLUSTER_PEERNAME: cluster2
+      CLUSTER_SECRET: ${CLUSTER_SECRET} 
+      CLUSTER_IPFSHTTP_NODEMULTIADDRESS: /dns4/ipfs0/tcp/5001
+      CLUSTER_CRDT_TRUSTEDPEERS: '*'
+      CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS: /ip4/0.0.0.0/tcp/9094
+      CLUSTER_MONITORPINGINTERVAL: 2s
+    volumes:
+      - cluster2-data:/data/ipfs-cluster
+    networks:
+      - internal
