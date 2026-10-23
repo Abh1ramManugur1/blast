@@ -328,6 +328,33 @@
     integrity="
     sha512-as9/oV0X0fT3O2lsRUY+vLRdPV2AZ+hoJqSNfZ/XxnGDJ4rjtAIlFnuMj0Bz/dfqEA/MKO2ahlOj0pUyLqnR6A==" crossorigin="anonymous"></script>
   {% include "latexify/scripts.html" %}
+  <!-- Status monitor indication color changing -->
+  <script>
+    (function () {
+      const link = document.getElementById("status-link");
+      const icon = document.getElementById("status-icon");
+
+      const error_types = ['info', 'warning', 'danger']; // Uptime Kuma incident types
+      fetch('https://monitor.ncsa.illinois.edu/api/status-page/blast')
+        .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(data => {
+          const active_incidents = (data.incidents || []).filter(i => i.active);
+          if (active_incidents.length === 0) {
+            icon.classList.add('text-success');
+            link.title = 'All systems operational';
+            return;
+          }
+          const worst = active_incidents.map(i => i.style).reduce((a,b) => error_types.indexOf(b) > error_types.indexOf(a) ? b : a);
+          icon.classList.add(error_types.includes(worst) ? 'text-' + worst : 'text-warning');
+          link.title = active_incidents.map(i => i.title).join('\n');
+        })
+        .catch(err => {
+          console.error('Status check failed:', err);
+          icon.classList.add('text-muted');
+          link.title = 'Status monitor unreachable';
+        });
+    })();
+  </script>
   {% block script %}{% endblock %}
 </body>
 </html>
