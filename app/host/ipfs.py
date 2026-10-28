@@ -18,7 +18,7 @@ class IPFSStore:
 
         response = requests.post(f'{self.api}/{endpoint}', params=params, timeout=300, **kwargs)
         if not response.ok:
-            raise IOError(f'IPS {endpoint} failed with {response.status_code}: {response.text}')
+            raise IOError(f'IPFS {endpoint} failed with {response.status_code}: {response.text}')
         return response
 
     def _cluster(self, method, endpoint):
@@ -49,7 +49,7 @@ class IPFSStore:
     def object_exists(self, path):
         try:
             self._request('files/stat', path)
-            return
+            return True
         except IOError as err: # no existing wrapper to read IOError message, used string parsing
             if 'does not exist' in str(err):
                 return False
